@@ -1,24 +1,31 @@
-import chromadb
-from sentence_transformers import SentenceTransformer
+import requests
+import json
 
-# Initialize embedding model and vector database
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-chroma_client = chromadb.PersistentClient(path="./vector_store")
-collection = chroma_client.get_or_create_collection(name="manuals")
+# Sends the query and retrieved context to LM Studio.
+# Retrieves a response from the LLM.
+# Handles API request errors gracefully.
 
-def store_embeddings(documents):
-    """Generate and store embeddings for document chunks."""
-    for doc_name, text in documents.items():
-        embedding = embedding_model.encode(text).tolist()
-        collection.add(ids=[doc_name], embeddings=[embedding], metadatas=[{"source": doc_name}])
 
-def retrieve_answer(query, documents):
-    """Retrieve the most relevant document chunk based on the query."""
-    query_embedding = embedding_model.encode(query).tolist()
-    results = collection.query(query_embeddings=[query_embedding], n_results=3)
+# LM Studio API Configuration
+LM_STUDIO_API_URL = "http://localhost:5001/generate"  # Ensure LM Studio is running
+
+def generate_response(prompt):
+    """Send a query to LM Studio API and return the generated response."""
+    payload = {
+        "model": "deepseek-r1-distill-qwen-7b",
+        "prompt": prompt,
+        "temperature": 0.7,
+        "max_tokens": 500
+    }
     
-    if results["documents"]:
-        best_match = results["documents"][0]
-        return best_match, results["metadatas"], results["distances"]
-    else:
-        return "Information not found.", [], []
+    try:
+        response = requests.post(LM_STUDIO_API_URL, json=payload)
+        response_data = response.json()
+        return response_data.get("text", "Error: No response from LLM.")
+    except requests.exceptions.RequestException as e:
+        return f"Error: {str(e)}"
+
+def get_answer(query, context):
+    """Format query with context and get a response from the LLM."""
+    prompt = f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"
+    return generate_response(prompt)

@@ -1,40 +1,38 @@
 import streamlit as st
-import os
-from pdf_processing import load_pdfs
+from pdf_processing import process_pdfs
 from retrieval import retrieve_answer
-from llm_integration import query_llm
-import logger
+import os
 
-# Streamlit UI Setup
-st.set_page_config(page_title="AI Assistant for Manuals", layout="wide")
-st.title("Chat with Your Appliance Manuals")
+# Streamlit UI
+st.set_page_config(page_title="AI Assistant for Appliance Manuals")
 
-# Sidebar for PDF directory selection
-pdf_folder = st.sidebar.text_input("Enter the path to the folder containing PDFs:")
-if pdf_folder and os.path.exists(pdf_folder):
-    st.sidebar.success("PDFs loaded successfully!")
-    documents = load_pdfs(pdf_folder)
-else:
-    st.sidebar.warning("Enter a valid folder path.")
+st.title("AI Assistant for Appliance Manuals")
 
-# Chat interface
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+# Sidebar for PDF Upload
+st.sidebar.header("Upload PDF Manuals")
+uploaded_files = st.sidebar.file_uploader("Upload PDFs", type=["pdf"], accept_multiple_files=True)
 
-user_input = st.text_input("Ask a question about your manuals:")
-if st.button("Send") and user_input:
-    response, citations, confidence = retrieve_answer(user_input, documents)
-    final_response = query_llm(response)
-    
-    # Logging
-    logger.log_interaction(user_input, final_response, confidence, citations)
-    
-    # Display conversation history
-    st.session_state.chat_history.append((user_input, final_response))
-    for query, reply in st.session_state.chat_history:
-        st.text_area("You:", query, height=30, disabled=True)
-        st.text_area("Assistant:", reply, height=100, disabled=True)
-    
+if uploaded_files:
+    pdf_texts = process_pdfs(uploaded_files)
+    st.sidebar.success("PDFs processed successfully!")
+
+# User Query Input
+query = st.text_input("Ask a question about your appliance manual:")
+
+if query:
+    response, citations, confidence = retrieve_answer(query)
+    st.write("### Answer:")
+    st.write(response)
+
     # Display citations and confidence score
-    st.write(f"**Confidence:** {confidence}")
-    st.write(f"**Citations:** {', '.join(citations)}")
+    if citations:
+        st.write("#### Citations:")
+        for citation in citations:
+            st.write(f"- {citation}")
+    
+    st.write(f"**Confidence Score:** {confidence:.2f}")
+
+st.sidebar.info("Ensure LM Studio is running with the required model.")
+
+if __name__ == "__main__":
+    st.sidebar.text("Ready for queries!")
