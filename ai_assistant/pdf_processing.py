@@ -1,6 +1,7 @@
 import pymupdf
 import chromadb
 from sentence_transformers import SentenceTransformer
+import os
 
 # This script extracts text from PDFs, chunks it, generates embeddings, and stores them in ChromaDB.
 
@@ -9,6 +10,28 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # Initialize ChromaDB
 vector_db = chromadb.PersistentClient(path="./vector_store")
+
+# Get list of PDF files from resources/manuals directory
+def get_local_pdf_files():
+    pdf_files = []
+    manual_dir = "../resources/manuals"
+    for file in os.listdir(manual_dir):
+        if file.endswith(".pdf"):
+            pdf_path = os.path.join(manual_dir, file)
+            pdf_files.append(open(pdf_path, "rb"))
+    return pdf_files
+
+
+def process_local_manuals():
+    """Process PDFs in the local manuals directory."""
+    pdf_files = get_local_pdf_files()
+    if pdf_files:
+        process_pdfs(pdf_files)
+        for f in pdf_files:
+            f.close()
+
+    return "PDFs processed successfully!"
+
 
 def process_pdfs(uploaded_files):
     """Extract text from uploaded PDFs and store embeddings in ChromaDB."""

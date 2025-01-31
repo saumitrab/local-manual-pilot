@@ -1,5 +1,5 @@
 import streamlit as st
-from pdf_processing import process_pdfs
+from pdf_processing import process_pdfs, process_local_manuals
 from retrieval import retrieve_answer
 import os
 
@@ -11,6 +11,10 @@ st.title("AI Assistant for Appliance Manuals")
 # Sidebar for PDF Upload
 st.sidebar.header("Upload PDF Manuals")
 uploaded_files = st.sidebar.file_uploader("Upload PDFs", type=["pdf"], accept_multiple_files=True)
+
+if 'initialized' not in st.session_state:
+    process_local_manuals()
+    st.session_state.initialized = True
 
 if uploaded_files:
     pdf_texts = process_pdfs(uploaded_files)

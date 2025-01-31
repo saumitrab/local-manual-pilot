@@ -1,3 +1,4 @@
 venv/
 ai_assistant/venv
-
+ai_assistant/vector_store/
+ai_assistant/__pycache__/
