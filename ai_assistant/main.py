@@ -2,6 +2,7 @@ import streamlit as st
 from pdf_processing import process_pdfs, process_local_manuals
 from retrieval import retrieve_answer
 import os
+from llm_integration import get_answer
 
 # Streamlit UI
 st.set_page_config(page_title="AI Assistant for Appliance Manuals")
@@ -24,17 +25,28 @@ if uploaded_files:
 query = st.text_input("Ask a question about your appliance manual:")
 
 if query:
+    # Get initial context and response from retrieval
     response, citations, confidence = retrieve_answer(query)
-    st.write("### Answer:")
-    st.write(response)
-
-    # Display citations and confidence score
-    if citations:
-        st.write("#### Citations:")
-        for citation in citations:
-            st.write(f"- {citation}")
     
-    st.write(f"**Confidence Score:** {confidence:.2f}")
+    # Prepare assistant's response using LLM
+    system_prompt = "I am an AI assistant specialized in helping with home appliance manuals."
+    user_context = f"Question: {query}\nContext: {response}\nConfidence: {confidence}"
+    
+    if confidence > 0.5 and response:
+        # Construct and verify response
+        final_response = get_answer(system_prompt, user_context)
+        
+        # Display response
+        st.write("### Answer:")
+        st.write(final_response)
+        
+        # Show citations if available
+        if citations:
+            st.write("#### Supporting Information:")
+            for citation in citations:
+                st.write(f"- {citation}")
+    else:
+        st.write("I apologize, but I don't have enough information to provide a reliable answer to your question.")
 
 st.sidebar.info("Ensure LM Studio is running with the required model.")
 
