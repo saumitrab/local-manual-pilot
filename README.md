@@ -44,7 +44,5 @@ This project is an AI-powered chat assistant that helps users interact with appl
 - 🌐 Cloud-based vector storage.
 - 💡 Rephrased query suggestions.
 
----
 
-Let me know if you'd like any modifications!
 
